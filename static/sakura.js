@@ -12,11 +12,21 @@
   let width = (canvas.width = window.innerWidth);
   let height = (canvas.height = window.innerHeight);
   let scrollY = window.scrollY;
+  const getPageHeight = () => Math.max(
+    document.documentElement.scrollHeight,
+    document.body.scrollHeight,
+    height
+  );
+  let pageHeight = getPageHeight();
 
-  window.addEventListener('resize', () => {
+  function updateDimensions() {
     width = canvas.width = window.innerWidth;
     height = canvas.height = window.innerHeight;
-  });
+    pageHeight = getPageHeight();
+  }
+
+  window.addEventListener('resize', updateDimensions);
+  window.addEventListener('load', updateDimensions);
 
   // Sichqoncha pozitsiyasi va ta'sir doirasi
   const mouse = {
@@ -32,6 +42,7 @@
       mouse.y += nextScrollY - scrollY;
     }
     scrollY = nextScrollY;
+    pageHeight = getPageHeight();
   }, { passive: true });
 
   window.addEventListener('mousemove', (e) => {
@@ -70,8 +81,8 @@
     reset(initial = false) {
       this.x = Math.random() * width;
       this.y = initial
-        ? scrollY + Math.random() * height
-        : scrollY - 30 - Math.random() * 60;
+        ? Math.random() * pageHeight
+        : -30 - Math.random() * 60;
       this.size = Math.random() * 10 + 14;
       this.speedY = Math.random() * 1.2 + 0.8;
       this.speedX = Math.random() * 0.8 - 0.2; // Yengil shamol oqimi
@@ -123,14 +134,13 @@
       this.rotation += this.rotationSpeed;
       this.flip += this.flipSpeed;
 
-      // Ekranning pastki yoki yon chegaralaridan chiqqanda yuqoridan yangitdan tushirish
-      if (
-        this.y < scrollY - 40 ||
-        this.y > scrollY + height + 40 ||
-        this.x < -50 ||
-        this.x > width + 50
-      ) {
+      // Sahifaning pastki chetiga yetgach barg yana yuqoridan tushadi.
+      if (this.y > pageHeight + 40) {
         this.reset();
+      } else if (this.x < -50) {
+        this.x = width + 50;
+      } else if (this.x > width + 50) {
+        this.x = -50;
       }
     }
 
@@ -164,7 +174,10 @@
   }
 
   // Ekran kengligiga mos barglar soni
-  const petalCount = Math.min(Math.floor(width / 24), 60);
+  const petalCount = Math.min(
+    Math.ceil(width / 24) * Math.ceil(pageHeight / height),
+    240
+  );
   const petals = [];
   for (let i = 0; i < petalCount; i++) {
     petals.push(new Petal());
