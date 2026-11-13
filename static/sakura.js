@@ -11,6 +11,7 @@
   const ctx = canvas.getContext('2d');
   let width = (canvas.width = window.innerWidth);
   let height = (canvas.height = window.innerHeight);
+  let scrollY = window.scrollY;
 
   window.addEventListener('resize', () => {
     width = canvas.width = window.innerWidth;
@@ -25,9 +26,17 @@
     active: false
   };
 
+  window.addEventListener('scroll', () => {
+    const nextScrollY = window.scrollY;
+    if (mouse.active) {
+      mouse.y += nextScrollY - scrollY;
+    }
+    scrollY = nextScrollY;
+  }, { passive: true });
+
   window.addEventListener('mousemove', (e) => {
     mouse.x = e.clientX;
-    mouse.y = e.clientY;
+    mouse.y = e.clientY + scrollY;
     mouse.active = true;
   });
 
@@ -41,7 +50,7 @@
   window.addEventListener('touchmove', (e) => {
     if (e.touches && e.touches.length > 0) {
       mouse.x = e.touches[0].clientX;
-      mouse.y = e.touches[0].clientY;
+      mouse.y = e.touches[0].clientY + scrollY;
       mouse.active = true;
     }
   }, { passive: true });
@@ -60,7 +69,9 @@
 
     reset(initial = false) {
       this.x = Math.random() * width;
-      this.y = initial ? Math.random() * height : -30 - Math.random() * 60;
+      this.y = initial
+        ? scrollY + Math.random() * height
+        : scrollY - 30 - Math.random() * 60;
       this.size = Math.random() * 10 + 14;
       this.speedY = Math.random() * 1.2 + 0.8;
       this.speedX = Math.random() * 0.8 - 0.2; // Yengil shamol oqimi
@@ -113,14 +124,19 @@
       this.flip += this.flipSpeed;
 
       // Ekranning pastki yoki yon chegaralaridan chiqqanda yuqoridan yangitdan tushirish
-      if (this.y > height + 40 || this.x < -50 || this.x > width + 50) {
+      if (
+        this.y < scrollY - 40 ||
+        this.y > scrollY + height + 40 ||
+        this.x < -50 ||
+        this.x > width + 50
+      ) {
         this.reset();
       }
     }
 
     draw() {
       ctx.save();
-      ctx.translate(this.x, this.y);
+      ctx.translate(this.x, this.y - scrollY);
       ctx.rotate(this.rotation);
       ctx.scale(Math.cos(this.flip), 1);
 
