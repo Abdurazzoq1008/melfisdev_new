@@ -54,6 +54,24 @@ body {
   color: var(--text-color);
   line-height: 1.6;
   position: relative;
+  --bg-x: 0px;
+  --bg-y: 0px;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: -44px;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.24;
+  background:
+    radial-gradient(circle at 18% 24%, rgba(201, 74, 110, 0.13) 0 2px, transparent 3px),
+    radial-gradient(circle at 72% 68%, rgba(233, 165, 152, 0.16) 0 3px, transparent 4px),
+    radial-gradient(circle at 42% 82%, rgba(201, 74, 110, 0.09) 0 2px, transparent 3px);
+  background-size: 96px 96px, 138px 138px, 118px 118px;
+  transform: translate(var(--bg-x), var(--bg-y)) scale(1.04);
+  transition: transform 0.12s linear;
 }
 
 #sakura-canvas {
@@ -63,8 +81,8 @@ body {
   width: 100vw;
   height: 100vh;
   pointer-events: none;
-  z-index: 0;
-  opacity: 0.55;
+  z-index: 5;
+  opacity: 1;
 }
 
 .header {
@@ -437,10 +455,12 @@ body {
 
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 300px));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 260px));
   justify-content: center;
   align-items: stretch;
-  gap: 28px;
+  gap: 24px;
+  max-width: 840px;
+  margin: 0 auto;
 }
 
 .product-card {

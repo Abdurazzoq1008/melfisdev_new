@@ -49,12 +49,20 @@
     mouse.x = e.clientX;
     mouse.y = e.clientY + scrollY;
     mouse.active = true;
+
+    // Fon sichqoncha harakatiga qarama-qarshi tarafga suriladi.
+    const moveX = ((e.clientX / width) - 0.5) * -34;
+    const moveY = ((e.clientY / height) - 0.5) * -24;
+    document.documentElement.style.setProperty('--bg-x', moveX.toFixed(2) + 'px');
+    document.documentElement.style.setProperty('--bg-y', moveY.toFixed(2) + 'px');
   });
 
   window.addEventListener('mouseleave', () => {
     mouse.active = false;
     mouse.x = -2000;
     mouse.y = -2000;
+    document.documentElement.style.setProperty('--bg-x', '0px');
+    document.documentElement.style.setProperty('--bg-y', '0px');
   });
 
   // Mobil qurilmalarda teginish (touch) uchun
@@ -63,6 +71,10 @@
       mouse.x = e.touches[0].clientX;
       mouse.y = e.touches[0].clientY + scrollY;
       mouse.active = true;
+      const moveX = ((e.touches[0].clientX / width) - 0.5) * -34;
+      const moveY = ((e.touches[0].clientY / height) - 0.5) * -24;
+      document.documentElement.style.setProperty('--bg-x', moveX.toFixed(2) + 'px');
+      document.documentElement.style.setProperty('--bg-y', moveY.toFixed(2) + 'px');
     }
   }, { passive: true });
 
@@ -70,6 +82,8 @@
     mouse.active = false;
     mouse.x = -2000;
     mouse.y = -2000;
+    document.documentElement.style.setProperty('--bg-x', '0px');
+    document.documentElement.style.setProperty('--bg-y', '0px');
   });
 
   // Sakura gul bargi klassi
@@ -90,15 +104,17 @@
       this.rotationSpeed = (Math.random() - 0.5) * 0.03;
       this.flip = Math.random() * Math.PI;
       this.flipSpeed = Math.random() * 0.03 + 0.01;
-      this.opacity = Math.random() * 0.35 + 0.65;
+      this.opacity = Math.random() * 0.15 + 0.85;
+      this.settled = false;
+      this.settleLife = 0;
       
-      // Mayin sakura pushti ranglar palitrasi
+      // Kunduzgi och fonlarda ham aniq ko'rinadigan sakura ranglari
       const colors = [
-        'rgba(255, 183, 197, ', // Klassik och pushti
-        'rgba(255, 192, 203, ', // Sakura pushti
-        'rgba(255, 218, 224, ', // Oqish pushti
-        'rgba(244, 154, 175, ', // Jonli pushti
-        'rgba(255, 228, 235, '  // Mayin shaffof pushti
+        'rgba(242, 105, 145, ',
+        'rgba(247, 127, 159, ',
+        'rgba(233, 92, 131, ',
+        'rgba(250, 146, 173, ',
+        'rgba(232, 70, 117, '
       ];
       this.baseColor = colors[Math.floor(Math.random() * colors.length)];
       
@@ -128,14 +144,57 @@
       this.pushVx *= 0.92;
       this.pushVy *= 0.92;
 
+      if (this.settled) {
+        this.settleLife--;
+        this.x += this.pushVx + Math.sin(this.flip) * 0.08;
+        this.flip += this.flipSpeed * 0.35;
+        this.rotation += this.rotationSpeed * 0.25;
+        if (this.settleLife <= 0) {
+          this.settled = false;
+          this.y = -30;
+        }
+      } else {
       // Pozitsiyani siljitish va tebranish berish
       this.x += this.speedX + Math.sin(this.flip) * 0.7 + this.pushVx;
       this.y += this.speedY + this.pushVy;
       this.rotation += this.rotationSpeed;
       this.flip += this.flipSpeed;
 
+        // Ayrim barglar mahsulot kartalarining ustiga to'planadi.
+        if (this.y > 220) {
+          const cards = document.querySelectorAll('.product-card');
+          for (let i = 0; i < cards.length; i++) {
+            if (Math.random() > 0.018) continue;
+            const rect = cards[i].getBoundingClientRect();
+            const cardTop = rect.top + scrollY;
+            const cardBottom = rect.bottom + scrollY;
+            if (
+              this.y >= cardTop - 12 &&
+              this.y <= cardBottom &&
+              this.x >= rect.left - 8 &&
+              this.x <= rect.right + 8
+            ) {
+              this.settled = true;
+              this.y = cardTop + Math.random() * Math.min(rect.height * 0.7, 180);
+              this.speedY = 0;
+              this.speedX = 0;
+              this.settleLife = 900 + Math.random() * 600;
+              break;
+            }
+          }
+        }
+
+        // Sahifa pastida to'planish.
+        if (!this.settled && this.y > pageHeight - 105 - Math.random() * 90) {
+          this.settled = true;
+          this.speedY = 0;
+          this.speedX = 0;
+          this.settleLife = 700 + Math.random() * 700;
+        }
+      }
+
       // Sahifaning pastki chetiga yetgach barg yana yuqoridan tushadi.
-      if (this.y > pageHeight + 40) {
+      if (!this.settled && this.y > pageHeight + 40) {
         this.reset();
       } else if (this.x < -50) {
         this.x = width + 50;
@@ -157,15 +216,19 @@
       ctx.bezierCurveTo(-this.size * 0.9, this.size * 0.4, -this.size * 0.85, -this.size * 0.85, 0, -this.size);
       
       ctx.fillStyle = this.baseColor + this.opacity + ')';
-      ctx.shadowColor = 'rgba(255, 182, 193, 0.35)';
-      ctx.shadowBlur = 4;
+      ctx.shadowColor = 'rgba(230, 90, 130, 0.4)';
+      ctx.shadowBlur = 7;
       ctx.fill();
+
+      ctx.strokeStyle = 'rgba(190, 55, 90, ' + (this.opacity * 0.45) + ')';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
 
       // Barg markazidagi nafis chiziq (tomiri)
       ctx.beginPath();
       ctx.moveTo(0, -this.size * 0.7);
       ctx.lineTo(0, this.size * 0.6);
-      ctx.strokeStyle = 'rgba(235, 130, 155, ' + (this.opacity * 0.35) + ')';
+      ctx.strokeStyle = 'rgba(175, 50, 80, ' + (this.opacity * 0.6) + ')';
       ctx.lineWidth = 1;
       ctx.stroke();
 
